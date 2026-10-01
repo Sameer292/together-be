@@ -1,8 +1,8 @@
 {
-  "name": "app",
-  "version": "1.0.50",
+  "name": "together-be",
+  "version": "0.0.1",
+  "module": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
@@ -10,6 +10,5 @@
   },
   "devDependencies": {
     "bun-types": "latest"
-  },
-  "module": "src/index.js"
+  }
 }
