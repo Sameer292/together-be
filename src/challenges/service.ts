@@ -86,9 +86,10 @@ export const createChallengeService = (db: Database, config: Config) => ({
       await activeMembership(tx, found.groupId, actor.id);
       if (challenge.publishedAt || challenge.cancelledAt)
         return fail(409, 'conflict', 'Challenge already published or cancelled');
-      const [clock] = await tx.execute(sql`select clock_timestamp() as now`);
-      const now = clock?.now;
-      if (!(now instanceof Date) || challenge.deadlineAt <= now)
+      const [clock] = await tx.execute(
+        sql`select (extract(epoch from clock_timestamp()) * 1000)::double precision as now_ms`,
+      );
+      if (typeof clock?.now_ms !== 'number' || challenge.deadlineAt.getTime() <= clock.now_ms)
         return fail(409, 'conflict', 'Deadline must be in the future');
       const [count] = await tx
         .select({ value: sql<number>`count(*)::int` })

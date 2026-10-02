@@ -81,8 +81,10 @@ export const createSubmissionService = (db: Database, config: Config) => ({
           )
             return fail(400, 'bad_request', 'Attachment unavailable');
         }
-        const [clock] = await tx.execute(sql`select clock_timestamp() as now`);
-        if (!(clock?.now instanceof Date) || clock.now >= locked.deadlineAt)
+        const [clock] = await tx.execute(
+          sql`select (extract(epoch from clock_timestamp()) * 1000)::double precision as now_ms`,
+        );
+        if (typeof clock?.now_ms !== 'number' || clock.now_ms >= locked.deadlineAt.getTime())
           return fail(409, 'conflict', 'Deadline passed');
         const [saved] = await tx
           .insert(submissions)
@@ -91,7 +93,7 @@ export const createSubmissionService = (db: Database, config: Config) => ({
             userId: actor.id,
             text: proof.text ?? null,
             link: proof.link ?? null,
-            acceptedAt: clock.now,
+            acceptedAt: new Date(clock.now_ms),
           })
           .returning({ id: submissions.id });
         if (!saved) return fail(503, 'unavailable', 'Submission failed');
