@@ -1,0 +1,7 @@
+# Authentication and callback contract
+
+Register, resend, and password reset send Supabase email codes. The email template must contain the code (`{{ .Token }}`), not a token-bearing URL. The future Expo app opens a credential-free deep link to its own verification screen, prompts for email and code, and POSTs them to `/v1/auth/verify` or `/v1/auth/password-reset/confirm`. `GET /v1/auth/callback?flow=email|recovery` is a credential-free testable route describing the flow; `POST /v1/auth/callback` accepts the same code exchange. Never put access, refresh, recovery, or OTP values in a URL, analytics event, or log.
+
+Verification returns access/refresh tokens over TLS in the response body. The app stores them in secure device storage and uses `/v1/auth/refresh` and `/v1/auth/logout`. Password reset first exchanges a recovery code for a valid Supabase recovery session, updates the password using that session, and logs it out. The server holds no shared mutable user session. Auth/profile partial failure is recovered by lazily creating a profile only after a verified, email-confirmed `/auth/v1/user` response; unverified accounts cannot access application data.
+
+Configure Supabase Auth mail delivery and rate limits in the provider dashboard. The API also applies a local per-peer-IP short window to auth calls; for multiple API replicas use a shared edge limiter. The proxy source address must be trustworthy; `X-Forwarded-For` is ignored.

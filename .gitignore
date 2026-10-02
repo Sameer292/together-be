@@ -14,6 +14,7 @@
 
 # production
 /build
+/dist/
 /.backend-git/
 
 # misc

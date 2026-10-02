@@ -1,0 +1,7 @@
+# Migrations and database roles
+
+`src/db/schema.ts` is the Drizzle source of truth; `drizzle/` is the reviewed SQL history. Set `MIGRATION_DATABASE_URL` and run `bun run db:generate` after schema edits, inspect the SQL, then `bun run db:migrate`. Do not use `drizzle-kit push` on deployment databases. Migration verification against an empty PostgreSQL instance is part of the `TEST_DATABASE_URL` integration test setup.
+
+The migration role owns schema changes. Provision a separate runtime login with `CONNECT` to the application database, `USAGE` on `public`, and only `SELECT, INSERT, UPDATE, DELETE` on application tables plus necessary sequence privileges. Reapply grants or set default privileges after new migrations. The runtime login must not own tables, create schema objects, access `auth` internals, or use the Supabase service role for SQL. `DATABASE_URL` uses that runtime login. Use TLS (`sslmode=require`) to Supabase's connection pooler and size the pool to deployment capacity; the code disables prepared statements for pooler compatibility. Localhost connections may be unencrypted for tests.
+
+The database uses foreign keys, uniqueness, partial unique indexes, and checks for active memberships, participant/submission uniqueness, reactions, active sponsorship, and event deduplication. Application services still validate actor-specific rules because direct SQL has no implicit RLS identity.
