@@ -15,7 +15,6 @@
 # production
 /build
 /dist/
-/.backend-git/
 
 # misc
 .DS_Store
