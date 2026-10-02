@@ -27,6 +27,8 @@ const isolated = Boolean(
 );
 const integration = isolated ? test : test.skip;
 const config = (capacity: number): Config => ({
+  providerMode: 'supabase',
+  localMediaDir: '.local/media',
   databaseUrl: url ?? 'postgres://unused:unused@localhost:5432/unused_test',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'test',
@@ -237,11 +239,16 @@ integration('private image lifecycle enforces ownership, size, content, and reve
   const submissionService = createSubmissionService(database.db, config(3));
   const { createMediaService } = await import('../src/media/service');
   const { default: sharp } = await import('sharp');
-  const media = createMediaService(database.db, config(3));
+  const media = createMediaService(database.db, { ...config(3), supabaseServiceKey: 'sb_secret_fixture' });
   const originalFetch = globalThis.fetch;
   const requests: string[] = [];
   const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     requests.push(`${init?.method ?? 'GET'} ${String(input)}`);
+    if (init?.method === 'POST' || init?.method === undefined) {
+      const headers = new Headers(init?.headers);
+      expect(headers.get('apikey')).toBe('sb_secret_fixture');
+      expect(headers.has('authorization')).toBe(false);
+    }
     if (init?.method === 'POST') return Response.json({ Key: 'fixture' });
     if (init?.method === 'DELETE') return Response.json([]);
     return new Response(new Uint8Array([1, 2, 3]));
@@ -311,8 +318,12 @@ integration('private image lifecycle enforces ownership, size, content, and reve
     await expect(submissionService.feed(owner, deadlineChallenge.id, 20)).rejects.toMatchObject({ status: 403 });
     const abandoned = await media.upload(owner, created.id, request(png));
     await media.removeAbandoned(owner, abandoned.id);
+    await database.db
+      .update(jobs)
+      .set({ runAt: new Date(0) })
+      .where(eq(jobs.dedupeKey, `delete_attachment:${abandoned.id}`));
     const worker = createJobService(database.db, config(3));
-    for (let i = 0; i < 5; i += 1) await worker.runOne();
+    await worker.runOne();
     const [left] = await database.db
       .select({ id: attachments.id })
       .from(attachments)

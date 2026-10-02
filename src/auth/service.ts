@@ -3,6 +3,7 @@ import type { Config } from '../config';
 import type { Database } from '../db';
 import { profiles } from '../db/schema';
 import { fail, isAppError } from '../errors';
+import { createLocalAuthService } from './local';
 
 export type Actor = { id: string; email: string; verified: boolean; moderationRole: boolean };
 type AuthUser = { id?: unknown; email?: unknown; email_confirmed_at?: unknown };
@@ -16,6 +17,7 @@ type AuthResponse = {
 };
 
 export const createAuthService = (config: Config, db: Database) => {
+  if (config.providerMode === 'local') return createLocalAuthService(db);
   const authRequest = async (path: string, init: RequestInit, token?: string): Promise<AuthResponse> => {
     const response = await fetch(`${config.supabaseUrl}/auth/v1${path}`, {
       ...init,

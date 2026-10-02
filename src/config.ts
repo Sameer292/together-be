@@ -1,5 +1,7 @@
 export type Config = {
   databaseUrl: string;
+  providerMode: 'local' | 'supabase';
+  localMediaDir: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
   supabaseServiceKey: string;
@@ -30,20 +32,25 @@ const positive = (name: string): number => {
   return value;
 };
 export const loadConfig = (): Config => {
+  const environment = required('NODE_ENV');
+  if (!['development', 'test', 'production'].includes(environment)) throw new Error('Invalid NODE_ENV');
+  const providerMode = required('PROVIDER_MODE');
+  if (providerMode !== 'local' && providerMode !== 'supabase') throw new Error('Invalid PROVIDER_MODE');
+  if (environment === 'production' && providerMode === 'local')
+    throw new Error('Local Auth and Storage forbidden in production');
   const billingMode = required('BILLING_MODE');
   if (billingMode !== 'test' && billingMode !== 'revenuecat') throw new Error('Invalid BILLING_MODE');
-  if (process.env.NODE_ENV === 'production' && billingMode === 'test')
-    throw new Error('Test billing forbidden in production');
+  if (environment === 'production' && billingMode === 'test') throw new Error('Test billing forbidden in production');
   const revenueCatEnvironment = process.env.REVENUECAT_ENVIRONMENT ?? 'sandbox';
   if (revenueCatEnvironment !== 'sandbox' && revenueCatEnvironment !== 'production')
     throw new Error('Invalid REVENUECAT_ENVIRONMENT');
-  if (process.env.NODE_ENV === 'production' && revenueCatEnvironment !== 'production')
+  if (environment === 'production' && revenueCatEnvironment !== 'production')
     throw new Error('Sandbox billing forbidden in production');
-  const supabaseUrl = required('SUPABASE_URL');
+  const supabaseUrl = providerMode === 'supabase' ? required('SUPABASE_URL') : (process.env.SUPABASE_URL ?? '');
   const authCallbackUrl = required('AUTH_CALLBACK_URL');
-  for (const value of [supabaseUrl, authCallbackUrl]) {
+  for (const value of [authCallbackUrl, ...(supabaseUrl ? [supabaseUrl] : [])]) {
     const parsed = new URL(value);
-    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:')
+    if (environment === 'production' && parsed.protocol !== 'https:')
       throw new Error('HTTPS URLs required in production');
   }
   if (billingMode === 'revenuecat') {
@@ -59,10 +66,12 @@ export const loadConfig = (): Config => {
     throw new Error('Paid limits must not be lower than free limits');
   return {
     databaseUrl: required('DATABASE_URL'),
+    providerMode,
+    localMediaDir: process.env.LOCAL_MEDIA_DIR ?? '.local/media',
     supabaseUrl: supabaseUrl.replace(/\/$/, ''),
-    supabaseAnonKey: required('SUPABASE_ANON_KEY'),
-    supabaseServiceKey: required('SUPABASE_SERVICE_KEY'),
-    storageBucket: required('STORAGE_BUCKET'),
+    supabaseAnonKey: providerMode === 'supabase' ? required('SUPABASE_ANON_KEY') : '',
+    supabaseServiceKey: providerMode === 'supabase' ? required('SUPABASE_SERVICE_KEY') : '',
+    storageBucket: providerMode === 'supabase' ? required('STORAGE_BUCKET') : 'proof-private',
     authCallbackUrl,
     freeGroupCapacity,
     paidGroupCapacity,

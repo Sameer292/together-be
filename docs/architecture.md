@@ -1,6 +1,6 @@
 # Architecture and authorization
 
-The API and worker share Drizzle schema and service modules. Elysia validates HTTP input and dispatches; services enforce rules using Drizzle queries and transactions. Supabase Auth supplies verified identity; direct PostgreSQL connections do not inherit Supabase RLS user identity. The backend never exposes Storage object keys or direct Storage URLs.
+The API and worker share Drizzle schema and service modules. Elysia validates HTTP input and dispatches; services enforce rules using Drizzle queries and transactions. Supabase Auth supplies verified identity in Supabase mode; local mode uses PostgreSQL-backed Auth for development. Both use the same application tables. Direct PostgreSQL connections do not inherit Supabase RLS user identity. The backend never exposes Storage object keys or direct Storage URLs.
 
 `memberships` records every join generation. Only one active row per group/user is allowed. Group row locks serialize invitation joins, departures, owner changes, publication, submission finalization, and sponsorship changes where needed. Publication inserts `challenge_participants` in the same transaction. `participantAccess` requires the snapshot membership ID to equal the actor's current active membership ID. `revealAccess` additionally requires an accepted, undeleted submission. Feed, attachment, comment, and reaction reads call these checks; blocks filter both directions. Previously downloaded content cannot be recalled.
 

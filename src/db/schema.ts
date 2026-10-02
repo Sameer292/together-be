@@ -24,6 +24,45 @@ export const profiles = pgTable('profiles', {
   deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }),
   createdAt: createdAt(),
 });
+export const localAuthAccounts = pgTable('local_auth_accounts', {
+  id: uuid('id')
+    .primaryKey()
+    .references(() => profiles.id),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  createdAt: createdAt(),
+});
+export const localAuthCodes = pgTable(
+  'local_auth_codes',
+  {
+    id: id(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => localAuthAccounts.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    codeHash: text('code_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index('local_auth_codes_account_idx').on(table.accountId, table.kind, table.createdAt),
+    check('local_auth_codes_kind_valid', sql`${table.kind} in ('email', 'recovery')`),
+  ],
+);
+export const localAuthSessions = pgTable('local_auth_sessions', {
+  id: id(),
+  accountId: uuid('account_id')
+    .notNull()
+    .references(() => localAuthAccounts.id, { onDelete: 'cascade' }),
+  accessHash: text('access_hash').notNull().unique(),
+  refreshHash: text('refresh_hash').notNull().unique(),
+  accessExpiresAt: timestamp('access_expires_at', { withTimezone: true }).notNull(),
+  refreshExpiresAt: timestamp('refresh_expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: createdAt(),
+});
 export const groups = pgTable('groups', {
   id: id(),
   name: text('name').notNull(),

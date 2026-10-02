@@ -1,4 +1,5 @@
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
+import { createLocalAuthService } from '../auth/local';
 import { createBillingService } from '../billing/service';
 import type { Config } from '../config';
 import type { Database } from '../db';
@@ -63,12 +64,20 @@ export const createJobService = (db: Database, config: Config) => {
         await billing.reconcileBound(payloadId(row.payload, 'subscriptionId'));
       } else if (row.kind === 'delete_account') {
         const userId = payloadId(row.payload, 'userId');
-        const response = await fetch(`${config.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
-          method: 'DELETE',
-          headers: { apikey: config.supabaseServiceKey, Authorization: `Bearer ${config.supabaseServiceKey}` },
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!response.ok && response.status !== 404) throw new Error('Auth deletion failed');
+        if (config.providerMode === 'local') await createLocalAuthService(db).deleteAccount(userId);
+        else {
+          const response = await fetch(`${config.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+            method: 'DELETE',
+            headers: {
+              apikey: config.supabaseServiceKey,
+              ...(config.supabaseServiceKey.startsWith('sb_secret_')
+                ? {}
+                : { Authorization: `Bearer ${config.supabaseServiceKey}` }),
+            },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!response.ok && response.status !== 404) throw new Error('Auth deletion failed');
+        }
         await users.scrubDeleted(userId);
       } else if (row.kind === 'cleanup_uploads') {
         const stale = await db

@@ -3,6 +3,8 @@ import type { Config } from './config';
 import { createDatabase } from './db';
 
 const config: Config = {
+  providerMode: 'supabase',
+  localMediaDir: '.local/media',
   databaseUrl: 'postgres://unused:unused@127.0.0.1:5432/unused',
   supabaseUrl: 'https://example.supabase.co',
   supabaseAnonKey: 'unused',

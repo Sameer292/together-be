@@ -10,11 +10,12 @@ const app = createApp(config, database.db).listen({
   maxRequestBodySize: Math.max(config.maxImageBytes, 1_048_576),
 });
 console.info(JSON.stringify({ event: 'server_started', port: config.port }));
-process.on('SIGTERM', () => {
-  app.stop();
+let stopping = false;
+const stop = (): void => {
+  if (stopping) return;
+  stopping = true;
+  if (app.server) app.stop();
   void database.close();
-});
-process.on('SIGINT', () => {
-  app.stop();
-  void database.close();
-});
+};
+process.on('SIGTERM', stop);
+process.on('SIGINT', stop);

@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { and, eq, sql } from 'drizzle-orm';
 import sharp from 'sharp';
 import type { Actor } from '../auth/service';
@@ -8,10 +10,23 @@ import { fail } from '../errors';
 import { participantAccess, submissionAccess } from '../submissions/access';
 
 export const createMediaService = (db: Database, config: Config) => {
+  const localPath = (key: string): string => {
+    if (!/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/.test(key)) throw new Error('Invalid object key');
+    return join(config.localMediaDir, key);
+  };
   const objectUrl = (key: string, authenticated = false): string =>
     `${config.supabaseUrl}/storage/v1/object/${authenticated ? 'authenticated/' : ''}${encodeURIComponent(config.storageBucket)}/${key}`;
-  const storageHeaders = { apikey: config.supabaseServiceKey, Authorization: `Bearer ${config.supabaseServiceKey}` };
+  const storageHeaders = {
+    apikey: config.supabaseServiceKey,
+    ...(config.supabaseServiceKey.startsWith('sb_secret_')
+      ? {}
+      : { Authorization: `Bearer ${config.supabaseServiceKey}` }),
+  };
   const deleteObject = async (key: string): Promise<void> => {
+    if (config.providerMode === 'local') {
+      await rm(localPath(key), { force: true });
+      return;
+    }
     const response = await fetch(
       `${config.supabaseUrl}/storage/v1/object/${encodeURIComponent(config.storageBucket)}`,
       {
@@ -22,6 +37,31 @@ export const createMediaService = (db: Database, config: Config) => {
       },
     );
     if (!response.ok && response.status !== 404) return fail(503, 'unavailable', 'Storage cleanup failed');
+  };
+  const readObject = async (key: string, mimeType: string): Promise<Response> => {
+    if (config.providerMode === 'local') {
+      const file = Bun.file(localPath(key));
+      if (!(await file.exists())) return fail(503, 'unavailable', 'Storage unavailable');
+      return new Response(file, {
+        headers: {
+          'Content-Type': mimeType,
+          'Cache-Control': 'private, no-store',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      });
+    }
+    const storage = await fetch(objectUrl(key, true), {
+      headers: storageHeaders,
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!storage.ok || !storage.body) return fail(503, 'unavailable', 'Storage unavailable');
+    return new Response(storage.body, {
+      headers: {
+        'Content-Type': mimeType,
+        'Cache-Control': 'private, no-store',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
   };
   return {
     upload: async (actor: Actor, challengeId: string, request: Request) => {
@@ -95,13 +135,19 @@ export const createMediaService = (db: Database, config: Config) => {
         state: 'staged',
       });
       try {
-        const response = await fetch(objectUrl(key), {
-          method: 'POST',
-          headers: { ...storageHeaders, 'Content-Type': 'image/webp', 'x-upsert': 'false' },
-          body: encoded,
-          signal: AbortSignal.timeout(30000),
-        });
-        if (!response.ok) return fail(503, 'unavailable', 'Storage upload failed');
+        if (config.providerMode === 'local') {
+          const path = localPath(key);
+          await mkdir(join(config.localMediaDir, actor.id), { recursive: true });
+          await writeFile(path, encoded, { flag: 'wx' });
+        } else {
+          const response = await fetch(objectUrl(key), {
+            method: 'POST',
+            headers: { ...storageHeaders, 'Content-Type': 'image/webp', 'x-upsert': 'false' },
+            body: encoded,
+            signal: AbortSignal.timeout(30000),
+          });
+          if (!response.ok) return fail(503, 'unavailable', 'Storage upload failed');
+        }
         await db
           .update(attachments)
           .set({ state: 'ready' })
@@ -144,18 +190,7 @@ export const createMediaService = (db: Database, config: Config) => {
         });
         if (blocked) return fail(404, 'not_found', 'Attachment not found');
       }
-      const storage = await fetch(objectUrl(attachment.objectKey, true), {
-        headers: storageHeaders,
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!storage.ok || !storage.body) return fail(503, 'unavailable', 'Storage unavailable');
-      return new Response(storage.body, {
-        headers: {
-          'Content-Type': attachment.mimeType,
-          'Cache-Control': 'private, no-store',
-          'X-Content-Type-Options': 'nosniff',
-        },
-      });
+      return readObject(attachment.objectKey, attachment.mimeType);
     },
     moderatedRead: async (actor: Actor, attachmentId: string): Promise<Response> => {
       if (!actor.moderationRole) return fail(403, 'forbidden', 'Moderator required');
@@ -178,18 +213,7 @@ export const createMediaService = (db: Database, config: Config) => {
       await db
         .insert(auditEvents)
         .values({ actorId: actor.id, targetId: attachmentId, action: 'moderation.attachment_read' });
-      const storage = await fetch(objectUrl(attachment.objectKey, true), {
-        headers: storageHeaders,
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!storage.ok || !storage.body) return fail(503, 'unavailable', 'Storage unavailable');
-      return new Response(storage.body, {
-        headers: {
-          'Content-Type': attachment.mimeType,
-          'Cache-Control': 'private, no-store',
-          'X-Content-Type-Options': 'nosniff',
-        },
-      });
+      return readObject(attachment.objectKey, attachment.mimeType);
     },
     removeAbandoned: async (actor: Actor, attachmentId: string): Promise<void> =>
       db.transaction(async (tx) => {

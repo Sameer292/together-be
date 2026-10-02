@@ -1,6 +1,7 @@
 # Reversible MVP defaults
 
 - Email/password with email code verification and password reset. Social providers are deferred.
+- Local development may use PostgreSQL-backed Auth and disk media; production rejects that mode. Supabase Auth/Storage can be paired with local PostgreSQL during development. The two Auth stores do not share accounts.
 - Proof may contain text, HTTPS link, and private image attachments. Completion criteria are instructions; valid format and deadline make a submission accepted. No judging gate, video, URL fetching, or preview generation.
 - Active members create draft or immediate challenges. Owners manage invitations and members. There are no group join limits beyond each group's configured capacity.
 - Publication snapshots active memberships. Current active membership must match the snapshot's membership ID. Every participant, including creators and owners, must submit to reveal. One accepted submission is immutable. Deletion revokes future reveal. Missing/skipping never unlocks; an accepted participant can read after the deadline while still eligible.

@@ -123,7 +123,7 @@ export const createApp = (config: Config, db: Database) => {
       '/resend-verification',
       ({ body, request, server }) => {
         authLimit(request, server, 'resend');
-        return auth.resend(body.email).then(() => message);
+        return auth.resend(body.email).then((result) => ok(result ?? { message: 'ok' }));
       },
       { body: t.Object({ email: t.String({ format: 'email' }) }) },
     )
@@ -150,7 +150,7 @@ export const createApp = (config: Config, db: Database) => {
       '/password-reset/request',
       ({ body, request, server }) => {
         authLimit(request, server, 'password-reset');
-        return auth.requestReset(body.email).then(() => message);
+        return auth.requestReset(body.email).then((result) => ok(result ?? { message: 'ok' }));
       },
       { body: t.Object({ email: t.String({ format: 'email' }) }) },
     )
