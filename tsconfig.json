@@ -11,5 +11,5 @@
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "test", "drizzle.config.ts"]
+  "include": ["src", "test", "scripts", "drizzle.config.ts"]
 }
