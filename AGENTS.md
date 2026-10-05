@@ -19,6 +19,7 @@
 - Put feature code in `src/modules/<feature>` with descriptive `<feature>.service.ts`, `<feature>.repository.ts`, and `<feature>.model.ts` names. Audience-specific `*.routes.ts` files compose individual endpoint plugins from their `routes/` folder using chained `.use(...)` calls. Place database/provider infrastructure in `src/infrastructure` and cross-feature helpers in `src/shared`.
 - Use chained Elysia instances with inline arrow handlers and schemas imported from feature models. Protected endpoint plugins explicitly `.use(authGuard)`; shared logging/error hooks are global, while authentication stays scoped. Use the configured `@/`, `@modules/`, `@infra/`, and `@shared/` aliases.
 - Keep configuration/database injection at application composition so tests and tools can create an app without listening or opening production connections. Preserve Together's `/v1` contract rather than copying the reference project's URL prefixes or domain roles.
+- Keep the API entry point as a simple chained `.use(...).listen(...)` bootstrap, like the reference. Do not add a custom stop function or `process.on` signal handlers to the server entry point.
 
 ## API and authorization
 - Validate request bodies, parameters, queries, environment variables, and external payloads at runtime. Explicitly select response fields; never return raw database rows by default.
