@@ -16,8 +16,8 @@
     "test:supabase": "bun scripts/supabase-check.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun src/db/seed.ts",
-    "api:generate": "bun src/generate-openapi.ts"
+    "db:seed": "bun src/infrastructure/database/database.seed.ts",
+    "api:generate": "bun scripts/generate-openapi.ts"
   },
   "dependencies": {
     "@elysia/openapi": "1.4.15",

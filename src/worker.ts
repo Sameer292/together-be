@@ -1,6 +1,6 @@
-import { loadConfig } from './config';
-import { createDatabase } from './db';
-import { createJobService } from './jobs/service';
+import { createDatabase } from '@infra/database/database.client';
+import { loadConfig } from '@/app/config/env';
+import { createJobService } from '@/jobs/job.service';
 
 const config = loadConfig();
 const database = createDatabase(config.databaseUrl);

@@ -1,28 +1,32 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Elysia Documentation",
+    "title": "Together API",
     "description": "Development documentation",
-    "version": "0.0.0"
+    "version": "0.1.0"
   },
   "paths": {
     "/v1/live": {
       "get": {
+        "tags": [
+          "Health"
+        ],
         "operationId": "getV1Live"
       }
     },
     "/v1/ready": {
       "get": {
+        "tags": [
+          "Health"
+        ],
         "operationId": "getV1Ready"
-      }
-    },
-    "/v1/billing/webhook": {
-      "post": {
-        "operationId": "postV1BillingWebhook"
       }
     },
     "/v1/auth/register": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -96,6 +100,9 @@
     },
     "/v1/auth/verify": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -338,6 +345,9 @@
     },
     "/v1/auth/resend-verification": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -390,6 +400,9 @@
     },
     "/v1/auth/login": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -626,6 +639,9 @@
     },
     "/v1/auth/refresh": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -850,6 +866,9 @@
     },
     "/v1/auth/password-reset/request": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -902,6 +921,9 @@
     },
     "/v1/auth/password-reset/confirm": {
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -990,6 +1012,9 @@
     },
     "/v1/auth/callback": {
       "get": {
+        "tags": [
+          "Public Auth"
+        ],
         "parameters": [
           {
             "name": "flow",
@@ -1007,6 +1032,9 @@
         "operationId": "getV1AuthCallback"
       },
       "post": {
+        "tags": [
+          "Public Auth"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1114,16 +1142,33 @@
         "operationId": "postV1AuthCallback"
       }
     },
+    "/v1/billing/webhook": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "operationId": "postV1BillingWebhook"
+      }
+    },
     "/v1/auth/logout": {
       "post": {
+        "tags": [
+          "Member Auth"
+        ],
         "operationId": "postV1AuthLogout"
       }
     },
     "/v1/me": {
       "get": {
+        "tags": [
+          "Profile"
+        ],
         "operationId": "getV1Me"
       },
       "patch": {
+        "tags": [
+          "Profile"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1212,6 +1257,9 @@
     },
     "/v1/me/deletion-request": {
       "post": {
+        "tags": [
+          "Profile"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1264,6 +1312,9 @@
     },
     "/v1/groups": {
       "post": {
+        "tags": [
+          "Groups"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1502,6 +1553,9 @@
         "operationId": "postV1Groups"
       },
       "get": {
+        "tags": [
+          "Groups"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1752,6 +1806,9 @@
     },
     "/v1/groups/{id}": {
       "get": {
+        "tags": [
+          "Groups"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -1956,6 +2013,9 @@
         "operationId": "getV1GroupsById"
       },
       "patch": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2037,6 +2097,9 @@
     },
     "/v1/groups/{id}/archive": {
       "post": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2053,6 +2116,9 @@
     },
     "/v1/groups/{id}/leave": {
       "post": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2069,6 +2135,9 @@
     },
     "/v1/groups/{id}/transfer": {
       "post": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2132,6 +2201,9 @@
     },
     "/v1/groups/{id}/members/{userId}": {
       "delete": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2157,6 +2229,9 @@
     },
     "/v1/groups/{id}/invitations": {
       "post": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2256,6 +2331,9 @@
     },
     "/v1/groups/{id}/invitations/{inviteId}": {
       "delete": {
+        "tags": [
+          "Groups"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2281,6 +2359,9 @@
     },
     "/v1/invitations/accept": {
       "post": {
+        "tags": [
+          "Invitations"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -2336,6 +2417,9 @@
     },
     "/v1/groups/{id}/challenges": {
       "post": {
+        "tags": [
+          "Challenges"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2658,6 +2742,9 @@
         "operationId": "postV1GroupsByIdChallenges"
       },
       "get": {
+        "tags": [
+          "Challenges"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -2704,6 +2791,9 @@
     },
     "/v1/challenges/{challengeId}": {
       "get": {
+        "tags": [
+          "Challenges"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -2718,6 +2808,9 @@
         "operationId": "getV1ChallengesByChallengeId"
       },
       "patch": {
+        "tags": [
+          "Challenges"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -2877,6 +2970,9 @@
     },
     "/v1/challenges/{challengeId}/publish": {
       "post": {
+        "tags": [
+          "Challenges"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -2893,6 +2989,9 @@
     },
     "/v1/challenges/{challengeId}/cancel": {
       "post": {
+        "tags": [
+          "Challenges"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -2909,6 +3008,9 @@
     },
     "/v1/challenges/{challengeId}/submissions": {
       "post": {
+        "tags": [
+          "Submissions"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -3183,6 +3285,9 @@
     },
     "/v1/challenges/{challengeId}/submissions/me": {
       "get": {
+        "tags": [
+          "Submissions"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -3197,6 +3302,9 @@
         "operationId": "getV1ChallengesByChallengeIdSubmissionsMe"
       },
       "delete": {
+        "tags": [
+          "Submissions"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -3213,6 +3321,9 @@
     },
     "/v1/challenges/{challengeId}/feed": {
       "get": {
+        "tags": [
+          "Submissions"
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -3499,6 +3610,9 @@
     },
     "/v1/challenges/{challengeId}/uploads": {
       "post": {
+        "tags": [
+          "Media"
+        ],
         "parameters": [
           {
             "name": "challengeId",
@@ -3515,6 +3629,9 @@
     },
     "/v1/attachments/{id}": {
       "get": {
+        "tags": [
+          "Media"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3529,6 +3646,9 @@
         "operationId": "getV1AttachmentsById"
       },
       "delete": {
+        "tags": [
+          "Media"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3545,6 +3665,9 @@
     },
     "/v1/submissions/{submissionId}/comments": {
       "post": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "submissionId",
@@ -3609,6 +3732,9 @@
         "operationId": "postV1SubmissionsBySubmissionIdComments"
       },
       "get": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "submissionId",
@@ -3655,6 +3781,9 @@
     },
     "/v1/comments/{id}": {
       "delete": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3671,6 +3800,9 @@
     },
     "/v1/submissions/{submissionId}/reactions": {
       "post": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "submissionId",
@@ -3744,6 +3876,9 @@
         "operationId": "postV1SubmissionsBySubmissionIdReactions"
       },
       "get": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "submissionId",
@@ -3760,6 +3895,9 @@
     },
     "/v1/submissions/{submissionId}/reactions/{emoji}": {
       "delete": {
+        "tags": [
+          "Comments and Reactions"
+        ],
         "parameters": [
           {
             "name": "submissionId",
@@ -3789,6 +3927,9 @@
     },
     "/v1/blocks": {
       "post": {
+        "tags": [
+          "Safety"
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -3841,6 +3982,9 @@
     },
     "/v1/blocks/{id}": {
       "delete": {
+        "tags": [
+          "Safety"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3857,6 +4001,9 @@
     },
     "/v1/reports/users/{id}": {
       "post": {
+        "tags": [
+          "Safety"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3923,6 +4070,9 @@
     },
     "/v1/reports/submissions/{id}": {
       "post": {
+        "tags": [
+          "Safety"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -3987,8 +4137,118 @@
         "operationId": "postV1ReportsSubmissionsById"
       }
     },
+    "/v1/groups/{id}/entitlement": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "getV1GroupsByIdEntitlement"
+      }
+    },
+    "/v1/groups/{id}/upgrade-intents": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "postV1GroupsByIdUpgrade-intents"
+      }
+    },
+    "/v1/upgrade-intents/{id}/reconcile": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subscriptionId"
+                ],
+                "properties": {
+                  "subscriptionId": {
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subscriptionId"
+                ],
+                "properties": {
+                  "subscriptionId": {
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "subscriptionId"
+                ],
+                "properties": {
+                  "subscriptionId": {
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "postV1Upgrade-intentsByIdReconcile"
+      }
+    },
     "/v1/moderation/reports": {
       "get": {
+        "tags": [
+          "Moderation"
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -4017,6 +4277,9 @@
     },
     "/v1/moderation/reports/{id}/review": {
       "post": {
+        "tags": [
+          "Moderation"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4089,6 +4352,9 @@
     },
     "/v1/moderation/submissions/{id}": {
       "get": {
+        "tags": [
+          "Moderation"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4105,6 +4371,9 @@
     },
     "/v1/moderation/attachments/{id}": {
       "get": {
+        "tags": [
+          "Moderation"
+        ],
         "parameters": [
           {
             "name": "id",
@@ -4117,104 +4386,6 @@
           }
         ],
         "operationId": "getV1ModerationAttachmentsById"
-      }
-    },
-    "/v1/groups/{id}/entitlement": {
-      "get": {
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "operationId": "getV1GroupsByIdEntitlement"
-      }
-    },
-    "/v1/groups/{id}/upgrade-intents": {
-      "post": {
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "operationId": "postV1GroupsByIdUpgrade-intents"
-      }
-    },
-    "/v1/upgrade-intents/{id}/reconcile": {
-      "post": {
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "subscriptionId"
-                ],
-                "properties": {
-                  "subscriptionId": {
-                    "minLength": 1,
-                    "maxLength": 500,
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "subscriptionId"
-                ],
-                "properties": {
-                  "subscriptionId": {
-                    "minLength": 1,
-                    "maxLength": 500,
-                    "type": "string"
-                  }
-                }
-              }
-            },
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "subscriptionId"
-                ],
-                "properties": {
-                  "subscriptionId": {
-                    "minLength": 1,
-                    "maxLength": 500,
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "operationId": "postV1Upgrade-intentsByIdReconcile"
       }
     }
   },

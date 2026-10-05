@@ -11,6 +11,10 @@ Bun + Elysia API and worker for private group challenges. PostgreSQL is the sour
 
 `bun run build`, `bun run typecheck`, `bun run lint`, `bun run format:check`, `bun run test`, and `bun run api:generate` validate the code. `.env.example` sets `TEST_DATABASE_URL` to the isolated Compose test database. Without a local `_test` URL, transactional tests are skipped. `bun run db:seed` creates synthetic local data only in a localhost database ending in `_dev`.
 
+## Code structure
+
+`src/index.ts` starts the server; `src/app/app.ts` composes the API. `src/app/routes` combines public, member, and moderation routes. Features live in `src/modules`, with named service/model files and individual Elysia endpoint plugins composed by audience-specific route files. Configuration and middleware live under `src/app`; database code lives in `src/infrastructure/database`; cross-feature helpers live in `src/shared`. See [architecture](docs/architecture.md) for dependency and hook scope conventions.
+
 ## API conventions
 
 All product endpoints use `/v1`. Successful JSON responses use `{ "data": ... }`; failures use `{ "error": { "code", "message", "requestId" } }`. The server also returns `x-request-id`. Authenticated calls send the current provider's access token in `Authorization: Bearer ...`; the backend verifies it. Create group, create challenge, and submit proof require `Idempotency-Key` (8–128 characters). List endpoints accept `limit` (1–50) and a UUID cursor; `nextCursor` is null at the end. Upload sends a raw image request body with `Content-Length`; downloads stream through the backend with `Cache-Control: private, no-store`.

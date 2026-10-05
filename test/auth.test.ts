@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
-import { createAuthService } from '../src/auth/service';
-import type { Config } from '../src/config';
-import { createDatabase } from '../src/db';
+import { createDatabase } from '@infra/database/database.client';
+import { createAuthService } from '@modules/auth/auth.service';
+import type { Config } from '@/app/config/env';
 
 const config: Config = {
   providerMode: 'supabase',

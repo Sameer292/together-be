@@ -14,6 +14,12 @@
 - Use PascalCase for types, camelCase for code identifiers, and snake_case for database identifiers. Name files consistently with the repository.
 - Keep modules focused, dependencies explicit, and configuration centralized. Avoid speculative frameworks and unrelated refactors.
 
+## Elysia structure
+- Follow the layout and route composition of `/home/iamsameer/Projects/HashTag/E-Commerce-BE`. Keep server startup in `src/index.ts`, application composition in `src/app/app.ts`, configuration in `src/app/config`, middleware in `src/app/middleware`, and API aggregators in `src/app/routes`.
+- Put feature code in `src/modules/<feature>` with descriptive `<feature>.service.ts`, `<feature>.repository.ts`, and `<feature>.model.ts` names. Audience-specific `*.routes.ts` files compose individual endpoint plugins from their `routes/` folder using chained `.use(...)` calls. Place database/provider infrastructure in `src/infrastructure` and cross-feature helpers in `src/shared`.
+- Use chained Elysia instances with inline arrow handlers and schemas imported from feature models. Protected endpoint plugins explicitly `.use(authGuard)`; shared logging/error hooks are global, while authentication stays scoped. Use the configured `@/`, `@modules/`, `@infra/`, and `@shared/` aliases.
+- Keep configuration/database injection at application composition so tests and tools can create an app without listening or opening production connections. Preserve Together's `/v1` contract rather than copying the reference project's URL prefixes or domain roles.
+
 ## API and authorization
 - Validate request bodies, parameters, queries, environment variables, and external payloads at runtime. Explicitly select response fields; never return raw database rows by default.
 - Verify tokens using supported verification libraries. Derive actor identity from verified credentials; never trust client-supplied identity or role claims.
