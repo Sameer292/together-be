@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
+import { createDatabase } from '@infra/database/database.client';
+import { profiles } from '@infra/database/database.schema';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
-import { createApp } from '../src/app';
-import { loadConfig } from '../src/config';
-import { createDatabase } from '../src/db';
-import { profiles } from '../src/db/schema';
+import { createApp } from '@/app/app';
+import { loadConfig } from '@/app/config/env';
 
 const config = loadConfig();
 if (config.providerMode !== 'supabase') throw new Error('Supabase mode required');

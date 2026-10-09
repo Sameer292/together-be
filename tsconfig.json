@@ -9,7 +9,13 @@
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@infra/*": ["./src/infrastructure/*"],
+      "@shared/*": ["./src/shared/*"]
+    }
   },
   "include": ["src", "test", "scripts", "drizzle.config.ts"]
 }

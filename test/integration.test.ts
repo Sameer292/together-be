@@ -1,11 +1,5 @@
 import { expect, test } from 'bun:test';
-import { and, eq, sql } from 'drizzle-orm';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import type { Actor } from '../src/auth/service';
-import { createBillingService } from '../src/billing/service';
-import { createChallengeService } from '../src/challenges/service';
-import type { Config } from '../src/config';
-import { createDatabase } from '../src/db';
+import { createDatabase } from '@infra/database/database.client';
 import {
   attachments,
   challenges as challengeRows,
@@ -15,11 +9,17 @@ import {
   participants,
   profiles,
   subscriptions,
-} from '../src/db/schema';
-import { createEngagementService } from '../src/engagement/service';
-import { createGroupService } from '../src/groups/service';
-import { createJobService } from '../src/jobs/service';
-import { createSubmissionService } from '../src/submissions/service';
+} from '@infra/database/database.schema';
+import type { Actor } from '@modules/auth/auth.service';
+import { createBillingService } from '@modules/billing/billing.service';
+import { createChallengeService } from '@modules/challenges/challenge.service';
+import { createEngagementService } from '@modules/engagement/engagement.service';
+import { createGroupService } from '@modules/groups/group.service';
+import { createSubmissionService } from '@modules/submissions/submission.service';
+import { and, eq, sql } from 'drizzle-orm';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { Config } from '@/app/config/env';
+import { createJobService } from '@/jobs/job.service';
 
 const url = process.env.TEST_DATABASE_URL;
 const isolated = Boolean(
@@ -237,7 +237,7 @@ integration('private image lifecycle enforces ownership, size, content, and reve
   const groupService = createGroupService(database.db, config(3));
   const challengeService = createChallengeService(database.db, config(3));
   const submissionService = createSubmissionService(database.db, config(3));
-  const { createMediaService } = await import('../src/media/service');
+  const { createMediaService } = await import('@modules/media/media.service');
   const { default: sharp } = await import('sharp');
   const media = createMediaService(database.db, { ...config(3), supabaseServiceKey: 'sb_secret_fixture' });
   const originalFetch = globalThis.fetch;
@@ -341,7 +341,7 @@ integration('reauthenticated deletion archives sole-owner groups and finishes th
   const owner = actor();
   await database.db.insert(profiles).values({ id: owner.id, displayName: 'Fixture' });
   const groupService = createGroupService(database.db, config(2));
-  const { createUserService } = await import('../src/users/service');
+  const { createUserService } = await import('@modules/users/user.service');
   const users = createUserService(database.db);
   const originalFetch = globalThis.fetch;
   const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {

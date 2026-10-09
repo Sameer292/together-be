@@ -1,22 +1,27 @@
 import { expect, test } from 'bun:test';
 import { rm } from 'node:fs/promises';
+import { createDatabase } from '@infra/database/database.client';
+import { jobs, localAuthAccounts } from '@infra/database/database.schema';
+import { createAuthService } from '@modules/auth/auth.service';
+import { isRecord } from '@shared/utils/validation';
 import { eq } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import sharp from 'sharp';
-import { createApp } from '../src/app';
-import { createAuthService } from '../src/auth/service';
-import { createChallengeService } from '../src/challenges/service';
-import type { Config } from '../src/config';
-import { createDatabase } from '../src/db';
-import { jobs, localAuthAccounts } from '../src/db/schema';
-import { createGroupService } from '../src/groups/service';
-import { createJobService } from '../src/jobs/service';
-import { createMediaService } from '../src/media/service';
-import { createSubmissionService } from '../src/submissions/service';
+import { createApp } from '@/app/app';
+import type { Config } from '@/app/config/env';
+import { createJobService } from '@/jobs/job.service';
 
 const url = process.env.TEST_DATABASE_URL;
 const integration =
   url && /^postgres(?:ql)?:\/\/[^/]+@(?:127\.0\.0\.1|localhost):\d+\/[^?]*_test(?:\?|$)/.test(url) ? test : test.skip;
+
+const responseField = async (response: Response, field: string): Promise<string> => {
+  const body: unknown = await response.json();
+  if (!isRecord(body) || !isRecord(body.data)) throw new Error('Expected data response');
+  const value = body.data[field];
+  if (typeof value !== 'string') throw new Error(`Expected string field: ${field}`);
+  return value;
+};
 
 integration(
   'local PostgreSQL auth and private disk proof work without Supabase',
@@ -58,60 +63,71 @@ integration(
     try {
       const registered = await post('/v1/auth/register', { email, password });
       expect(registered.status).toBe(200);
-      const registration = await registered.json();
-      const code: string = registration.data.devCode;
+      const code = await responseField(registered, 'devCode');
       expect(code).toMatch(/^\d{6}$/);
       const denied = await post('/v1/auth/login', { email, password });
       expect(denied.status).toBe(401);
       expect((await post('/v1/auth/verify', { email, code: '000000' })).status).toBe(401);
       const verified = await post('/v1/auth/verify', { email, code });
       expect(verified.status).toBe(200);
-      const tokens = (await verified.json()).data;
-      const me = await app.handle(
-        new Request('http://localhost/v1/me', {
-          headers: { authorization: `Bearer ${tokens.accessToken}` },
-        }),
-      );
+      const accessToken = await responseField(verified, 'accessToken');
+      const authorized = async (path: string, method: string = 'GET', body?: object): Promise<Response> =>
+        app.handle(
+          new Request(`http://localhost${path}`, {
+            method,
+            headers: {
+              authorization: `Bearer ${accessToken}`,
+              'content-type': 'application/json',
+              'idempotency-key': crypto.randomUUID(),
+            },
+            ...(body ? { body: JSON.stringify(body) } : {}),
+          }),
+        );
+      const me = await authorized('/v1/me');
       expect(me.status).toBe(200);
-      const actor = await auth.userFromToken(tokens.accessToken);
-      const groups = createGroupService(database.db, config);
-      const challenges = createChallengeService(database.db, config);
-      const submissions = createSubmissionService(database.db, config);
-      const media = createMediaService(database.db, config);
-      const group = await groups.create(actor, 'Local fixture', '', crypto.randomUUID());
-      const challenge = await challenges.create(
-        actor,
-        group.id,
-        {
-          title: 'Attach an image',
-          description: '',
-          criteria: 'One image',
-          proofFormats: ['image'],
-          deadlineAt: new Date(Date.now() + 60000).toISOString(),
-        },
-        crypto.randomUUID(),
-      );
-      await challenges.publish(actor, challenge.id);
+      const actor = await auth.userFromToken(accessToken);
+      expect((await authorized('/v1/moderation/reports')).status).toBe(403);
+      const group = await authorized('/v1/groups', 'POST', { name: 'Local fixture' });
+      expect(group.status).toBe(200);
+      const groupId = await responseField(group, 'id');
+      const challenge = await authorized(`/v1/groups/${groupId}/challenges`, 'POST', {
+        title: 'Attach an image',
+        description: '',
+        criteria: 'One image',
+        proofFormats: ['image'],
+        deadlineAt: new Date(Date.now() + 60000).toISOString(),
+      });
+      expect(challenge.status).toBe(200);
+      const challengeId = await responseField(challenge, 'id');
+      expect((await authorized(`/v1/challenges/${challengeId}/publish`, 'POST')).status).toBe(200);
       const png = await sharp({ create: { width: 1, height: 1, channels: 3, background: '#ffffff' } })
         .png()
         .toBuffer();
-      const upload = await media.upload(
-        actor,
-        challenge.id,
-        new Request('http://localhost/upload', {
+      const upload = await app.handle(
+        new Request(`http://localhost/v1/challenges/${challengeId}/uploads`, {
           method: 'POST',
-          headers: { 'content-length': String(png.byteLength) },
+          headers: { 'content-length': String(png.byteLength), authorization: `Bearer ${accessToken}` },
           body: png,
         }),
       );
-      await expect(media.read(actor, upload.id)).rejects.toMatchObject({ status: 404 });
-      await submissions.submit(actor, challenge.id, { attachmentIds: [upload.id] }, crypto.randomUUID());
-      const object = await media.read(actor, upload.id);
+      expect(upload.status).toBe(200);
+      const attachmentId = await responseField(upload, 'id');
+      expect((await authorized(`/v1/attachments/${attachmentId}`)).status).toBe(404);
+      expect((await authorized(`/v1/challenges/${challengeId}/feed`)).status).toBe(403);
+      expect(
+        (
+          await authorized(`/v1/challenges/${challengeId}/submissions`, 'POST', {
+            attachmentIds: [attachmentId],
+          })
+        ).status,
+      ).toBe(200);
+      expect((await authorized(`/v1/challenges/${challengeId}/feed`)).status).toBe(200);
+      const object = await authorized(`/v1/attachments/${attachmentId}`);
       expect(object.status).toBe(200);
       expect(object.headers.get('cache-control')).toBe('private, no-store');
       expect((await object.arrayBuffer()).byteLength).toBeGreaterThan(0);
       const resetRequest = await post('/v1/auth/password-reset/request', { email });
-      const reset = (await resetRequest.json()).data;
+      const resetCode = await responseField(resetRequest, 'devCode');
       expect(
         (await post('/v1/auth/password-reset/confirm', { email, code: '000000', password: 'new-local-password-123' }))
           .status,
@@ -120,19 +136,19 @@ integration(
         (
           await post('/v1/auth/password-reset/confirm', {
             email,
-            code: reset.devCode,
+            code: resetCode,
             password: 'new-local-password-123',
           })
         ).status,
       ).toBe(200);
-      await expect(auth.userFromToken(tokens.accessToken)).rejects.toMatchObject({ status: 401 });
+      await expect(auth.userFromToken(accessToken)).rejects.toMatchObject({ status: 401 });
       const newLogin = await post('/v1/auth/login', { email, password: 'new-local-password-123' });
       expect(newLogin.status).toBe(200);
-      const newTokens = (await newLogin.json()).data;
+      const newAccessToken = await responseField(newLogin, 'accessToken');
       const deletion = await app.handle(
         new Request('http://localhost/v1/me/deletion-request', {
           method: 'POST',
-          headers: { 'content-type': 'application/json', authorization: `Bearer ${newTokens.accessToken}` },
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${newAccessToken}` },
           body: JSON.stringify({ password: 'new-local-password-123' }),
         }),
       );
@@ -147,7 +163,7 @@ integration(
         .from(localAuthAccounts)
         .where(eq(localAuthAccounts.id, actor.id));
       expect(remaining).toBeUndefined();
-      await expect(auth.userFromToken(newTokens.accessToken)).rejects.toMatchObject({ status: 401 });
+      await expect(auth.userFromToken(newAccessToken)).rejects.toMatchObject({ status: 401 });
     } finally {
       await database.close();
       await rm(mediaDir, { recursive: true, force: true });
