@@ -1,0 +1,5 @@
+# Account deletion
+
+`POST /v1/me/deletion-request` requires the current access token plus the account password for reauthentication. If the user owns a group with other active members, the request returns 409 until ownership is transferred. Sole-member owned groups are archived, never silently removed. The request marks the profile pending, deactivates all memberships, immediately revokes future application access, and enqueues a durable job.
+
+The worker deletes the Supabase Auth account in Supabase mode, or the local Auth account and sessions in local mode. It removes proof text/links and comments, schedules private objects for deletion, and scrubs the profile name/bio. A profile UUID and transactional/audit metadata remain for referential integrity and necessary abuse/billing records. Repeated jobs are safe; failures remain retriable and visible. A deletion request cannot recall content already downloaded by another member. Operators should apply their retention policy to billing events and audit rows separately.

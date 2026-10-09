@@ -1,0 +1,9 @@
+# Authentication and callback contract
+
+The backend owns all Auth calls. The future Expo app registers or requests a reset through `/v1/auth`, displays a code entry screen, then sends email and code in a JSON body to `/v1/auth/verify` or `/v1/auth/password-reset/confirm`. `GET /v1/auth/callback?flow=email|recovery` is a credential-free route describing the flow; `POST /v1/auth/callback` accepts the same code exchange. Deep links should open the code entry screen without including a code, access token, refresh token, or recovery credential in the URL.
+
+With `PROVIDER_MODE=supabase`, Supabase sends the email code; configure its confirmation and recovery templates with `{{ .Token }}`. The backend uses a stateless Auth request per call and verifies user tokens through Supabase `/auth/v1/user`. A verified user gets a matching local profile on first authenticated request. A failure to create the profile leaves Auth intact and can be retried; the user receives no application access until it succeeds. Password reset exchanges a recovery code for a Supabase recovery session, updates the password through that session, and logs it out.
+
+With `PROVIDER_MODE=local`, codes are hashed in PostgreSQL, expire after 15 minutes, and are returned as `data.devCode` by registration, resend, and reset request endpoints. Passwords use Bun's password hashing. Access and refresh tokens are random opaque values whose hashes are stored in PostgreSQL; refresh rotates them. A successful reset revokes existing sessions. Local mode cannot start in production. These local accounts are separate from Supabase Auth accounts.
+
+Responses carry credentials only in JSON bodies over HTTPS outside localhost. Do not log them. The API rate limits auth operations by peer IP and ignores client supplied forwarding headers; keep a trusted edge limiter if running multiple replicas.
