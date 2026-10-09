@@ -14,9 +14,13 @@
 
 # production
 /build
+<<<<<<< Updated upstream
 /dist/
 .env
 .local/
+=======
+/dist
+>>>>>>> Stashed changes
 
 # misc
 .DS_Store
@@ -28,6 +32,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env.local
 .env.development.local
 .env.test.local
